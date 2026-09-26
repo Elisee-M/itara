@@ -52,6 +52,18 @@
   opacity: 0.85;
 }
 
+/* Logo */
+.logo {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.login__logo {
+  width: 88px;
+}
+
 /* Login */
 .login {
   display: flex;
@@ -99,6 +111,11 @@
   align-items: center;
   gap: 20px;
   text-align: center;
+}
+
+.dashboard__logo {
+  width: 64px;
+  margin-bottom: 4px;
 }
 
 /* Plain text status: no background, no border, no button-like styling. */

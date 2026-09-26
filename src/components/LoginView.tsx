@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import lampLogo from '../assets/home-lamp-logo.png'
 
 export type UnlockResult = 'ok' | 'wrong_password' | 'unreachable'
 
@@ -31,6 +32,7 @@ export default function LoginView({ onUnlock }: LoginViewProps) {
 
   return (
     <form className="login" onSubmit={handleSubmit}>
+      <img className="logo login__logo" src={lampLogo} alt="" />
       <h1 className="login__title">Home Lamp</h1>
 
       <label className="login__label" htmlFor="lamp-password">

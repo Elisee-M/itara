@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import lampLogo from '../assets/home-lamp-logo.png'
 
 type DashboardViewProps = {
   lampOn: boolean
@@ -22,6 +23,8 @@ export default function DashboardView({
 
   return (
     <section className="dashboard">
+      <img className="logo dashboard__logo" src={lampLogo} alt="" />
+
       <p className="dashboard__status">
         {lampOn ? 'Lamp is currently ON' : 'Lamp is currently OFF'}
       </p>
