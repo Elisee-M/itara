@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getStatus, login } from './api/lamp.ts'
+import {
+  LampUnreachableError,
+  NotAuthenticatedError,
+  getStatus,
+  login,
+  toggleLamp,
+} from './api/lamp.ts'
 import type { LampStatus } from './api/lamp.ts'
 import DashboardView from './components/DashboardView.tsx'
 import Footer from './components/Footer.tsx'
@@ -51,6 +57,26 @@ export default function App() {
     [checkStatus],
   )
 
+  const handleToggle = useCallback(async () => {
+    try {
+      const lampOn = await toggleLamp()
+      setStatus((previous) => ({
+        authenticated: previous?.authenticated ?? true,
+        lampOn,
+      }))
+      setUnreachable(false)
+    } catch (error) {
+      if (error instanceof NotAuthenticatedError) {
+        // The device dropped the session: fall back to the login screen.
+        setStatus({ authenticated: false, lampOn: false })
+        return
+      }
+
+      setUnreachable(true)
+      if (error instanceof LampUnreachableError) void checkStatus()
+    }
+  }, [checkStatus])
+
   useEffect(() => {
     void checkStatus()
 
@@ -96,7 +122,11 @@ export default function App() {
             )}
           </section>
         ) : status?.authenticated ? (
-          <DashboardView lampOn={status.lampOn} unreachable={unreachable} />
+          <DashboardView
+            lampOn={status.lampOn}
+            unreachable={unreachable}
+            onToggle={handleToggle}
+          />
         ) : (
           <LoginView onUnlock={handleUnlock} />
         )}

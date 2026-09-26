@@ -114,6 +114,11 @@
   color: var(--muted);
 }
 
+.dashboard__toggle {
+  min-height: 60px;
+  font-size: 18px;
+}
+
 /* Connection problems */
 .connection {
   display: flex;
