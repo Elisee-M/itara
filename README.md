@@ -57,7 +57,7 @@ response, 6 s timeout) surfaces as a calm message — never a raw error.
 src/
   api/lamp.ts              API client for the four endpoints
   assets/home-lamp-logo.png  App logo (transparent background)
-  components/Footer.tsx    "Made by Elisee" footer (rendered on every screen)
+  components/Footer.tsx    "Made by Elisee" credit + portfolio link (every screen)
   components/LoginView.tsx Logo, password field + Unlock button
   components/DashboardView.tsx  Logo, plain-text status + single toggle button
   App.tsx                  Root: status polling and view switching
@@ -68,6 +68,11 @@ public/
 
 > The `Made by Elisee` footer in `src/components/Footer.tsx` is a permanent
 > requirement — do not remove or hide it.
+
+The footer also links to `https://elisee.vercel.app/`. It is a plain anchor
+with `target="_blank"`, so it adds no request of its own (the app still only
+ever talks to the device) and a packaged WebView hands it to the system
+browser. On the isolated AP it simply will not load, which is expected.
 
 ## Logo
 
