@@ -150,6 +150,11 @@
   font-weight: 500;
 }
 
+.connection__logo {
+  width: 72px;
+  margin-bottom: 4px;
+}
+
 .connection__hint {
   margin: 0 0 8px;
   font-size: 14px;

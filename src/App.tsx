@@ -6,6 +6,7 @@ import {
   login,
   toggleLamp,
 } from './api/lamp.ts'
+import lampLogo from './assets/home-lamp-logo.png'
 import type { LampStatus } from './api/lamp.ts'
 import DashboardView from './components/DashboardView.tsx'
 import Footer from './components/Footer.tsx'
@@ -105,6 +106,7 @@ export default function App() {
       <main className="app__main">
         {showConnectionScreen ? (
           <section className="connection">
+            <img className="logo connection__logo" src={lampLogo} alt="" />
             <p className="connection__text">
               {checked ? 'Cannot reach the lamp.' : 'Connecting to the lamp…'}
             </p>
