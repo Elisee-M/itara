@@ -56,15 +56,24 @@ response, 6 s timeout) surfaces as a calm message — never a raw error.
 ```
 src/
   api/lamp.ts              API client for the four endpoints
+  assets/home-lamp-logo.png  App logo (transparent background)
   components/Footer.tsx    "Made by Elisee" footer (rendered on every screen)
-  components/LoginView.tsx Password field + Unlock button
-  components/DashboardView.tsx  Plain-text status + single toggle button
+  components/LoginView.tsx Logo, password field + Unlock button
+  components/DashboardView.tsx  Logo, plain-text status + single toggle button
   App.tsx                  Root: status polling and view switching
   index.css / App.css      Mobile-first styles
+public/
+  favicon.png, icon-192.png, icon-512.png   Icons generated from the logo
 ```
 
 > The `Made by Elisee` footer in `src/components/Footer.tsx` is a permanent
 > requirement — do not remove or hide it.
+
+## Logo
+
+`src/assets/home-lamp-logo.png` is the transparent-background artwork, shown on
+the login and dashboard screens. `public/favicon.png` and the `icon-*.png` files
+are downscaled copies of it, used by the browser/WebView chrome.
 
 ## Wrapping as an Android APK (later)
 
@@ -75,6 +84,12 @@ npx cap init "Home Lamp" com.elisee.homelamp --web-dir=dist
 npx cap add android && npx cap sync
 npx cap open android
 ```
+
+Launcher icon: Capacitor generates the Android mipmaps from a single square
+source. Put a **1024×1024** opaque PNG at `assets/icon.png` before
+`npx cap add android` — export it from the full-size original artwork
+(`home_lamp_logo.png`, 1254×1254) rather than upscaling the 500×500
+transparent version used in the UI.
 
 Note: Android blocks cleartext HTTP by default. The generated
 `android/app/src/main/res/xml/network_security_config.xml` only allows
