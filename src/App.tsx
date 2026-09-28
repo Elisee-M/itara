@@ -15,6 +15,7 @@ import type { UnlockResult } from './components/LoginView.tsx'
 import './App.css'
 
 const POLL_INTERVAL_MS = 4000
+const IDLE_POLL_INTERVAL_MS = 15000
 
 export default function App() {
   const [status, setStatus] = useState<LampStatus | null>(null)
@@ -23,6 +24,9 @@ export default function App() {
   const inFlight = useRef(false)
   const mutationInFlight = useRef(false)
   const revision = useRef(0)
+  const timer = useRef<number | null>(null)
+
+  const authenticated = status?.authenticated === true
 
   const checkStatus = useCallback(async () => {
     if (inFlight.current) return
@@ -95,25 +99,44 @@ export default function App() {
   }, [checkStatus])
 
   useEffect(() => {
-    void checkStatus()
+    // On the login screen there is nothing to keep in sync but reachability, so
+    // poll slowly there and keep the 4s cadence only while a session is open.
+    const interval = authenticated ? POLL_INTERVAL_MS : IDLE_POLL_INTERVAL_MS
+    let cancelled = false
 
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') void checkStatus()
-    }, POLL_INTERVAL_MS)
+    const schedule = () => {
+      if (cancelled) return
+      if (timer.current !== null) window.clearTimeout(timer.current)
+      timer.current = window.setTimeout(run, interval)
+    }
+
+    // Self-scheduling: the next request only goes out once the previous one has
+    // settled, so a slow device can never stack requests on top of each other.
+    const run = async () => {
+      if (cancelled) return
+      if (document.visibilityState === 'visible') await checkStatus()
+      schedule()
+    }
 
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') void checkStatus()
+      if (document.visibilityState !== 'visible') return
+      void checkStatus()
+      schedule()
     }
+
+    void run()
 
     document.addEventListener('visibilitychange', refreshWhenVisible)
     window.addEventListener('focus', refreshWhenVisible)
 
     return () => {
-      clearInterval(interval)
+      cancelled = true
+      if (timer.current !== null) window.clearTimeout(timer.current)
+      timer.current = null
       document.removeEventListener('visibilitychange', refreshWhenVisible)
       window.removeEventListener('focus', refreshWhenVisible)
     }
-  }, [checkStatus])
+  }, [authenticated, checkStatus])
 
   const showConnectionScreen = !checked || (unreachable && status === null)
 
