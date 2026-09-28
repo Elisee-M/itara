@@ -21,15 +21,23 @@ export default function App() {
   const [unreachable, setUnreachable] = useState(false)
   const [checked, setChecked] = useState(false)
   const inFlight = useRef(false)
+  const mutationInFlight = useRef(false)
+  const revision = useRef(0)
 
   const checkStatus = useCallback(async () => {
     if (inFlight.current) return
     inFlight.current = true
+    const startedAt = revision.current
 
     try {
-      setStatus(await getStatus())
+      const next = await getStatus()
+      // A toggle or a login landed while this request was in the air: that
+      // answer is newer than ours, so drop it instead of clobbering it.
+      if (revision.current !== startedAt) return
+      setStatus(next)
       setUnreachable(false)
     } catch {
+      if (revision.current !== startedAt) return
       setUnreachable(true)
     } finally {
       inFlight.current = false
@@ -43,6 +51,7 @@ export default function App() {
         const success = await login(password)
         if (!success) return 'wrong_password'
 
+        revision.current += 1
         setStatus((previous) => ({
           authenticated: true,
           lampOn: previous?.lampOn ?? false,
@@ -59,8 +68,12 @@ export default function App() {
   )
 
   const handleToggle = useCallback(async () => {
+    if (mutationInFlight.current) return
+    mutationInFlight.current = true
+
     try {
       const lampOn = await toggleLamp()
+      revision.current += 1
       setStatus((previous) => ({
         authenticated: previous?.authenticated ?? true,
         lampOn,
@@ -69,12 +82,15 @@ export default function App() {
     } catch (error) {
       if (error instanceof NotAuthenticatedError) {
         // The device dropped the session: fall back to the login screen.
+        revision.current += 1
         setStatus({ authenticated: false, lampOn: false })
         return
       }
 
       setUnreachable(true)
       if (error instanceof LampUnreachableError) void checkStatus()
+    } finally {
+      mutationInFlight.current = false
     }
   }, [checkStatus])
 
