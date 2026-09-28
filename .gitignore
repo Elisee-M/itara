@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Capacitor regenerates this with npx cap add android / npx cap sync
+android/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
