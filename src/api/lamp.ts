@@ -70,20 +70,36 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function getStatus(): Promise<LampStatus> {
-  const data = await request<Partial<LampStatus>>('/api/status')
-  return {
-    authenticated: data.authenticated === true,
-    lampOn: data.lampOn === true,
+  // Some firmware answers 401 here instead of 200 with authenticated:false. The
+  // device clearly is reachable, so that is a session state, not an outage.
+  try {
+    const data = await request<Partial<LampStatus>>('/api/status')
+    return {
+      authenticated: data.authenticated === true,
+      lampOn: data.lampOn === true,
+    }
+  } catch (error) {
+    if (error instanceof NotAuthenticatedError) {
+      return { authenticated: false, lampOn: false }
+    }
+    throw error
   }
 }
 
 export async function login(password: string): Promise<boolean> {
-  const data = await request<{ success?: boolean }>('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ pwd: password }).toString(),
-  })
-  return data.success === true
+  try {
+    const data = await request<{ success?: boolean }>('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ pwd: password }).toString(),
+    })
+    return data.success === true
+  } catch (error) {
+    // A rejected password may arrive as 401 rather than success:false, and the
+    // login screen must say "wrong password" rather than "cannot reach".
+    if (error instanceof NotAuthenticatedError) return false
+    throw error
+  }
 }
 
 export async function toggleLamp(): Promise<boolean> {
@@ -94,8 +110,14 @@ export async function toggleLamp(): Promise<boolean> {
 }
 
 export async function logout(): Promise<boolean> {
-  const data = await request<{ success?: boolean }>('/api/logout', {
-    method: 'POST',
-  })
-  return data.success === true
+  try {
+    const data = await request<{ success?: boolean }>('/api/logout', {
+      method: 'POST',
+    })
+    return data.success !== false
+  } catch (error) {
+    // Already logged out on the device: the outcome we wanted either way.
+    if (error instanceof NotAuthenticatedError) return true
+    throw error
+  }
 }
