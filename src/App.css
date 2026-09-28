@@ -163,6 +163,13 @@
   font-size: 18px;
 }
 
+/* Quiet secondary action, narrower than the toggle so it reads as a fallback
+   and never competes with the lamp control. */
+.dashboard__logout {
+  max-width: 200px;
+  font-size: 15px;
+}
+
 /* Connection problems */
 .connection {
   display: flex;

@@ -4,6 +4,7 @@ import {
   NotAuthenticatedError,
   getStatus,
   login,
+  logout,
   toggleLamp,
 } from './api/lamp.ts'
 import lampLogo from './assets/home-lamp-logo.png'
@@ -98,6 +99,30 @@ export default function App() {
     }
   }, [checkStatus])
 
+  const handleLogout = useCallback(async () => {
+    if (mutationInFlight.current) return
+    mutationInFlight.current = true
+
+    try {
+      await logout()
+      // A refused logout still means the device holds no usable session for us,
+      // and the next poll re-syncs whatever the device really thinks.
+      revision.current += 1
+      setStatus({ authenticated: false, lampOn: false })
+      setUnreachable(false)
+    } catch (error) {
+      if (error instanceof NotAuthenticatedError) {
+        revision.current += 1
+        setStatus({ authenticated: false, lampOn: false })
+        return
+      }
+
+      setUnreachable(true)
+    } finally {
+      mutationInFlight.current = false
+    }
+  }, [])
+
   useEffect(() => {
     // On the login screen there is nothing to keep in sync but reachability, so
     // poll slowly there and keep the 4s cadence only while a session is open.
@@ -167,6 +192,7 @@ export default function App() {
             lampOn={status.lampOn}
             unreachable={unreachable}
             onToggle={handleToggle}
+            onLogout={handleLogout}
           />
         ) : (
           <LoginView onUnlock={handleUnlock} />
