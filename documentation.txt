@@ -1,0 +1,277 @@
+================================================================================
+ HOME LAMP - FILE REFERENCE
+ Project: C:\Users\WEGO TRONICS\Documents\itara
+================================================================================
+
+WHAT THIS PROJECT IS
+--------------------------------------------------------------------------------
+A mobile-first React + TypeScript app that controls an ESP32 "Home Lamp" over
+the local network. The app is NOT hosted on the device: it is a standalone web
+app, bundled locally and wrapped into an Android APK with Capacitor. It talks
+to the ESP32 at http://192.168.4.1 once the phone joins the open "Home Lamp"
+WiFi access point.
+
+The phone is on an isolated AP with no internet, so the app is offline by
+design: system font stack only, no CDN, no analytics, no web fonts, no remote
+images, and no request of any kind outside the device. Every network failure is
+turned into a calm human message, never a raw error string. The password is
+never logged and never hard-coded.
+
+Stack: React 19 + TypeScript + Vite 8. Lint: oxlint. Wrapper: Capacitor
+(@capacitor/core, @capacitor/cli, @capacitor/android). No test framework and
+no test directory exist in this project.
+
+There is one permanent branding rule: the text "Made by Elisee" must appear at
+the bottom of every screen. It lives in src/components/Footer.tsx and is never
+removed or hidden.
+
+
+HOW TO RUN
+--------------------------------------------------------------------------------
+  npm install          install dependencies
+  npm run dev          Vite dev server
+  npm run build        tsc -b && vite build   ->  writes dist/
+  npm run lint         oxlint src
+  npm run preview      serve the built dist/
+
+  On Windows PowerShell, call npm as "npm.cmd" if script execution is disabled.
+
+  Android debug APK:
+    npm run build
+    npx cap sync android
+    cd android
+    gradlew.bat assembleDebug
+  (see README.md for GRADLE_USER_HOME and android\local.properties notes)
+
+
+HOW THE PIECES CONNECT
+--------------------------------------------------------------------------------
+  index.html
+      -> loads src/main.tsx
+  src/main.tsx
+      -> mounts <App/> (src/App.tsx) and imports the global stylesheet
+  src/App.tsx
+      -> owns ALL runtime state (status, unreachable, checked)
+      -> polls getStatus() from src/api/lamp.ts every 4s while visible
+      -> chooses exactly one of three views:
+           ConnectionView  when !checked || (unreachable && status === null)
+           DashboardView   when status.authenticated
+           LoginView       otherwise
+      -> always renders <Footer/> below the view
+  src/api/lamp.ts
+      -> the ONLY module that performs network I/O
+      -> talks only to API_BASE (default http://192.168.4.1)
+      -> normalises every failure into LampUnreachableError,
+         and HTTP 401 into NotAuthenticatedError
+  src/components/*.tsx
+      -> pure presentational views; they receive data and callbacks as props
+      -> they never fetch anything themselves
+
+
+FILE-BY-FILE REFERENCE  (sizes in bytes)
+--------------------------------------------------------------------------------
+.gitignore                              243
+    Ignore rules: node_modules, dist, *.local, .vscode, .idea, .DS_Store, and
+    the Android build output (android/local.properties, android/.gradle,
+    android/**/build).
+
+.oxlintrc.json                          203
+    oxlint configuration. Enables the react/typescript/oxc plugins and the
+    react/rules-of-hooks (error) and react/only-export-components (warn) rules.
+    Ignores dist, android and node_modules.
+
+capacitor.config.ts                     501
+    Capacitor wrapper config. appId com.elisee.homelamp, appName "Home Lamp",
+    webDir "dist". Forces the WebView to http://localhost (server.androidScheme
+    "http", cleartext true) so the page may call http://192.168.4.1 without a
+    mixed-content block, and sets android.allowMixedContent true.
+
+continuation                            0
+    Empty placeholder file carried over from earlier work. Harmless; kept so
+    nothing is lost.
+
+documentation.txt                       (this file)
+    Human-readable, file-by-file reference of the whole project.
+
+home_lamp_logo.png                      933800
+    Full-size original artwork (opaque). Source for exporting the launcher
+    icon; not shipped in the web bundle.
+
+home_lamp_logo_no_bg.png                47516
+    Transparent-background version of the artwork, 500x500. Source from which
+    src/assets/home-lamp-logo.png and the public/ icons were exported.
+
+index.html                              760
+    HTML entry point. Sets the mobile viewport (width=device-width,
+    viewport-fit=cover), theme-color #f7f7f8, color-scheme light,
+    mobile-web-app-capable, the favicon/apple-touch-icon links, the title, and
+    the #root mount node that loads /src/main.tsx.
+
+package.json                            634
+    Manifest. Scripts are exactly: dev (vite), build (tsc -b && vite build),
+    lint (oxlint src), preview (vite preview). Dependencies: react, react-dom,
+    @capacitor/core, @capacitor/cli, @capacitor/android. Dev deps: typescript,
+    vite, @vitejs/plugin-react, @types/*, oxlint.
+
+package-lock.json                       84810
+    Exact, locked dependency tree for reproducible installs.
+
+README.md                               6580
+    Requirements, npm scripts, VITE_LAMP_HOST, the device API table, the
+    offline-by-design rationale, project layout, the Android build steps, and
+    known limitations.
+
+tsconfig.json                           126
+    Root TypeScript config: no files of its own, references tsconfig.app.json
+    and tsconfig.node.json (the "tsc -b" project graph).
+
+tsconfig.app.json                       681
+    App compiler options: target/lib ES2023 + DOM, module esnext,
+    moduleResolution bundler, allowImportingTsExtensions (imports carry .ts /
+    .tsx extensions), verbatimModuleSyntax (types imported with import type),
+    noEmit, jsx react-jsx, types ["vite/client"], noUnusedLocals,
+    noUnusedParameters, erasableSyntaxOnly (no enums / parameter properties),
+    noFallthroughCasesInSwitch. Includes src/.
+
+tsconfig.node.json                      581
+    Node-side config for build tooling (vite.config.ts): module nodenext,
+    types ["node"], noEmit.
+
+vite.config.ts                          168
+    Vite config: the React plugin only. No proxy, no external origin.
+
+public/favicon.png                      1721
+    64x64 favicon for the browser / WebView chrome.
+
+public/icon-192.png                     8350
+    192x192 app icon, referenced by index.html and apple-touch-icon.
+
+public/icon-512.png                     44052
+    512x512 app icon, referenced by index.html.
+
+src/main.tsx                            235
+    React entry point. createRoot(...).render(<StrictMode><App/></StrictMode>)
+    and imports ./index.css.
+
+src/index.css                           713
+    Design tokens (--bg, --surface, --text, --muted, --border, --accent,
+    --danger, --primary, --radius, --tap), a box-sizing reset, html/body/#root
+    height, the system font stack (no web fonts), and a visible focus ring.
+
+src/App.css                             2456
+    Mobile-first layout. .app uses 100dvh with safe-area padding; .content is
+    capped at 420px and centred. Includes the ONE toggle button styles
+    (.button--on green / .button--off red), the .button--primary blue for
+    Unlock/Try again, quiet .button--ghost secondary actions, the login form,
+    the plain (unstyled box) .status text, and the footer + .pill chip.
+
+src/App.tsx                             3771
+    Root component and the single source of UI state. Holds status,
+    unreachable and checked; uses an inFlight ref so status requests never
+    overlap; polls getStatus() every 4000 ms only while
+    document.visibilityState === "visible", and also on visibilitychange and
+    window focus. Implements handleUnlock, handleToggle (401 -> back to login),
+    handleLogout and handleReboot (marks the session logged out locally, since
+    the device resets its flag on reboot). Renders ConnectionView / LoginView /
+    DashboardView plus the Footer.
+
+src/api/lamp.ts                         3154
+    The ONLY file that performs network I/O. Reads API_BASE from
+    VITE_LAMP_HOST (build time, trailing slashes trimmed) defaulting to
+    http://192.168.4.1; uses a 6-second AbortController timeout and
+    cache: "no-store". Exports getStatus, login (urlencoded pwd), toggleLamp,
+    logout and rebootDevice, plus LampStatus, LampUnreachableError and
+    NotAuthenticatedError. Never logs the request init (it carries the
+    password); dev-only console warnings drop out of production builds.
+
+src/assets/home-lamp-logo.png           47516
+    500x500 transparent logo shown in the UI (login, dashboard, connection).
+
+src/components/Footer.tsx               304
+    The footer shown on every screen: the permanent "Made by Elisee" credit and
+    a small "Portfolio" pill linking to https://elisee.vercel.app/ with
+    target="_blank" rel="noopener noreferrer". Pure anchor: adds no request.
+
+src/components/ConnectionView.tsx       778
+    Shown while no status has been received in this session. Logo + title;
+    "Connecting to the lamp…" while the first check runs, otherwise
+    "Cannot reach the lamp." with a hint to join the "Home Lamp" WiFi and a
+    "Try again" button.
+
+src/components/LoginView.tsx            1661
+    Logo + title, one labelled password field and an "Unlock" button. Shows
+    "That password did not work." or "Cannot reach the lamp. Check that you are
+    on the Home Lamp network." Ignores double submits while pending. Exports the
+    UnlockResult type ("ok" | "wrong" | "unreachable").
+
+src/components/DashboardView.tsx        2656
+    Logo + title, the plain-text status line ("Lamp is currently ON/OFF", no
+    background/border), the ONE toggle button ("Turn OFF" when on, "Turn ON"
+    when off, disabled while pending), a quiet "Lost connection…" notice, and
+    the visually quiet actions: Log out and Restart device with an in-app
+    two-step confirm ("Restart the device?" -> "Yes, restart" / "Cancel").
+
+
+ANDROID PLATFORM  (generated by "npx cap add android", then customised)
+--------------------------------------------------------------------------------
+android/ contains the native Gradle project generated by Capacitor. Two files
+were customised by hand:
+
+android/app/src/main/AndroidManifest.xml
+    Keeps <uses-permission android:name="android.permission.INTERNET" /> and adds
+    android:networkSecurityConfig="@xml/network_security_config" on the
+    <application> tag.
+
+android/app/src/main/res/xml/network_security_config.xml
+    Allows cleartext HTTP to 192.168.4.1 only:
+
+        <domain-config cleartextTrafficPermitted="true">
+            <domain includeSubdomains="false">192.168.4.1</domain>
+        </domain-config>
+
+The remaining 52 tracked android files are the unmodified Capacitor template:
+  android/.gitignore
+  android/app/.gitignore
+  android/app/build.gradle
+  android/app/capacitor.build.gradle
+  android/app/proguard-rules.pro
+  android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+  android/app/src/main/java/com/elisee/homelamp/MainActivity.java
+  android/app/src/main/res/drawable-land-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/splash.png
+  android/app/src/main/res/drawable-port-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/splash.png
+  android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+  android/app/src/main/res/drawable/ic_launcher_background.xml
+  android/app/src/main/res/drawable/splash.png
+  android/app/src/main/res/layout/activity_main.xml
+  android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+  android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+  android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher.png
+  android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher_foreground.png
+  android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher_round.png
+  android/app/src/main/res/values/ic_launcher_background.xml
+  android/app/src/main/res/values/strings.xml
+  android/app/src/main/res/values/styles.xml
+  android/app/src/main/res/xml/file_paths.xml
+  android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+  android/build.gradle
+  android/capacitor.settings.gradle
+  android/gradle.properties
+  android/gradle/wrapper/gradle-wrapper.jar
+  android/gradle/wrapper/gradle-wrapper.properties
+  android/gradlew
+  android/gradlew.bat
+  android/settings.gradle
+  android/variables.gradle
+
+Not committed (gitignored): android/local.properties (machine SDK path),
+android/.gradle and android/**/build (Gradle output), node_modules and dist.
+
+
+NETWORK RULES (enforced by review)
+--------------------------------------------------------------------------------
+  * Only src/api/lamp.ts performs network I/O.
+  * The only host is the device: http://192.168.4.1 (or VITE_LAMP_HOST).
+  * One request in flight at a time; status polls no faster than every 4s and
+    never overlap.
+  * No external fonts, CDNs, analytics or remote images anywhere.
+  * The lamp password is typed by the user, never stored, never logged.
