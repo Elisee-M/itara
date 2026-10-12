@@ -14,6 +14,8 @@ import DashboardView from "./components/DashboardView.tsx";
 import Footer from "./components/Footer.tsx";
 import LoginView from "./components/LoginView.tsx";
 import type { UnlockResult } from "./components/LoginView.tsx";
+import ThemeToggle from "./components/ThemeToggle.tsx";
+import { useThemeWithTransition } from "./theme/useThemeTransition.ts";
 import "./App.css";
 
 const POLL_MS = 4000;
@@ -23,6 +25,7 @@ export default function App() {
   const [unreachable, setUnreachable] = useState(false);
   const [checked, setChecked] = useState(false);
   const inFlight = useRef(false);
+  const { toggleWithTransition } = useThemeWithTransition();
 
   const checkStatus = useCallback(async () => {
     if (inFlight.current) return;
@@ -96,7 +99,6 @@ export default function App() {
     } catch {
       // The device may drop before it replies. That is expected.
     }
-    // The device resets its login flag on reboot.
     setStatus((prev) => (prev ? { ...prev, authenticated: false } : prev));
   };
 
@@ -122,6 +124,9 @@ export default function App() {
 
   return (
     <div className="app">
+      <header className="app__header">
+        <ThemeToggle onToggle={toggleWithTransition} />
+      </header>
       <main className="content">{view}</main>
       <Footer />
     </div>
