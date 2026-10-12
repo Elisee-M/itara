@@ -9,8 +9,43 @@
   --primary: #2f6df6;  /* Unlock / Try again */
   --radius: 14px;
   --tap: 52px;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-primary: var(--primary);
+  --elevated: #ffffff;
+  --color-elevated: var(--elevated);
+  --button-fg: #ffffff;
+  color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
+}
+
+[data-theme="lagoon"] {
+  --bg: #0F1B1E;
+  --surface: #162428;
+  --elevated: #1D2F34;
+  --border: #2A4047;
+  --text: #E6E2D6;
+  --muted: #9BAFB0;
+  --accent: #5FB8A8;      /* "Turn ON" - teal */
+  --danger: #E07A6B;      /* "Turn OFF" - warm red */
+  --primary: #E8A64C;     /* gold - primary actions */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-primary: var(--primary);
+  --button-fg: #E6E2D6;
+  color-scheme: dark;
 }
 
 *,
@@ -27,8 +62,8 @@ body,
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -38,6 +73,11 @@ input {
 }
 
 :focus-visible {
-  outline: 3px solid var(--primary);
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-bg);
 }
