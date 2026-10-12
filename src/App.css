@@ -21,3 +21,111 @@
   gap: 18px;
   text-align: center;
 }
+
+.logo {
+  object-fit: contain;
+}
+.logo--login { width: 120px; height: 120px; }
+.logo--dashboard,
+.logo--connection { width: 96px; height: 96px; }
+[data-theme="lagoon"] .logo {
+  filter: drop-shadow(0 0 8px rgba(95, 184, 168, 0.25));
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Status is plain text on purpose: no background, border or button styling. */
+.status {
+  margin: 0;
+  font-size: 1.15rem;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.hint,
+.notice {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-danger);
+}
+
+.button {
+  width: 100%;
+  min-height: var(--tap);
+  border: 0;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--button-fg);
+  cursor: pointer;
+  transition: opacity 0.15s, background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.button:disabled { opacity: 0.55; cursor: default; }
+.button--on { background: var(--color-accent); }
+.button--off { background: var(--color-danger); }
+.button--primary { background: var(--color-primary); }
+.button--ghost {
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  min-height: 44px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 0.85rem; color: var(--color-muted); }
+.field input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-elevated);
+  color: var(--color-text);
+}
+.field input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.7;
+}
+
+.secondary { width: 100%; margin-top: 8px; }
+.confirm { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.confirm__row { display: flex; gap: 10px; width: 100%; }
+
+.footer {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.pill {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-surface);
+}
