@@ -1,0 +1,18 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Local environment files
+*.local
+
+# Editors and OS
+.vscode
+.idea
+.DS_Store
+
+# Android: machine-local SDK path and Gradle build output
+android/local.properties
+android/.gradle
+android/**/build
