@@ -1,74 +1,103 @@
-import { useState } from 'react'
-import lampLogo from '../assets/home-lamp-logo.png'
+import { useState } from "react";
 
-type DashboardViewProps = {
-  lampOn: boolean
-  unreachable: boolean
-  onToggle: () => Promise<void>
-  onLogout: () => Promise<void>
-}
+type Props = {
+  logo: string;
+  lampOn: boolean;
+  unreachable: boolean;
+  onToggle: () => Promise<void>;
+  onLogout: () => Promise<void>;
+  onReboot: () => Promise<void>;
+};
 
 export default function DashboardView({
+  logo,
   lampOn,
   unreachable,
   onToggle,
   onLogout,
-}: DashboardViewProps) {
-  const [toggling, setToggling] = useState(false)
-  const [loggingOut, setLoggingOut] = useState(false)
-  const busy = toggling || loggingOut
+  onReboot,
+}: Props) {
+  const [pending, setPending] = useState(false);
+  const [confirmingRestart, setConfirmingRestart] = useState(false);
 
-  async function handleToggle() {
-    if (busy) return
-    setToggling(true)
+  async function run(action: () => Promise<void>) {
+    if (pending) return;
+    setPending(true);
     try {
-      await onToggle()
+      await action();
     } finally {
-      setToggling(false)
-    }
-  }
-
-  async function handleLogout() {
-    if (busy) return
-    setLoggingOut(true)
-    try {
-      await onLogout()
-    } finally {
-      setLoggingOut(false)
+      setPending(false);
     }
   }
 
   return (
-    <section className="dashboard">
-      <img className="logo dashboard__logo" src={lampLogo} alt="" />
+    <>
+      <img className="logo logo--dashboard" src={logo} alt="Home Lamp" />
+      <h1 className="title">Home Lamp</h1>
 
-      <p className="dashboard__status">
-        {lampOn ? 'Lamp is currently ON' : 'Lamp is currently OFF'}
+      {/* Plain text. No background, no border, nothing button-like. */}
+      <p className="status" aria-live="polite">
+        Lamp is currently {lampOn ? "ON" : "OFF"}
       </p>
 
-      <button
-        className="button button--primary dashboard__toggle"
-        type="button"
-        onClick={() => void handleToggle()}
-        disabled={busy}
-      >
-        {toggling ? 'Switching…' : lampOn ? 'Turn OFF' : 'Turn ON'}
-      </button>
-
       {unreachable && (
-        <p className="dashboard__notice">
-          Lost connection to the lamp. Trying again…
+        <p className="notice" role="status">
+          Lost connection to the lamp. Retrying…
         </p>
       )}
 
+      {/* The ONE toggle button. */}
       <button
-        className="button button--secondary dashboard__logout"
         type="button"
-        onClick={() => void handleLogout()}
-        disabled={busy}
+        className={`button ${lampOn ? "button--off" : "button--on"}`}
+        disabled={pending}
+        onClick={() => void run(onToggle)}
       >
-        {loggingOut ? 'Logging out…' : 'Log out'}
+        {lampOn ? "Turn OFF" : "Turn ON"}
       </button>
-    </section>
-  )
+
+      <div className="secondary">
+        {confirmingRestart ? (
+          <div className="confirm">
+            <p className="hint">Restart the device?</p>
+            <div className="confirm__row">
+              <button
+                type="button"
+                className="button button--ghost"
+                disabled={pending}
+                onClick={() => void run(onReboot)}
+              >
+                Yes, restart
+              </button>
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => setConfirmingRestart(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="confirm__row">
+            <button
+              type="button"
+              className="button button--ghost"
+              disabled={pending}
+              onClick={() => void run(onLogout)}
+            >
+              Log out
+            </button>
+            <button
+              type="button"
+              className="button button--ghost"
+              onClick={() => setConfirmingRestart(true)}
+            >
+              Restart device
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }

@@ -1,67 +1,56 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import lampLogo from '../assets/home-lamp-logo.png'
+import { useState } from "react";
+import type { FormEvent } from "react";
 
-export type UnlockResult = 'ok' | 'wrong_password' | 'unreachable'
+export type UnlockResult = "ok" | "wrong" | "unreachable";
 
-type LoginViewProps = {
-  onUnlock: (password: string) => Promise<UnlockResult>
-}
+type Props = {
+  logo: string;
+  onUnlock: (password: string) => Promise<UnlockResult>;
+};
 
-export default function LoginView({ onUnlock }: LoginViewProps) {
-  const [password, setPassword] = useState('')
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<UnlockResult | null>(null)
+export default function LoginView({ logo, onUnlock }: Props) {
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (pending) return
-
-    setPending(true)
-    setError(null)
-
-    const result = await onUnlock(password)
-    if (result === 'ok') {
-      setPassword('')
-    } else {
-      setError(result)
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (pending) return;
+    setPending(true);
+    setError(null);
+    const result = await onUnlock(password);
+    setPending(false);
+    if (result === "wrong") {
+      setError("That password did not work.");
+    } else if (result === "unreachable") {
+      setError("Cannot reach the lamp. Check that you are on the Home Lamp network.");
     }
-
-    setPending(false)
   }
 
   return (
-    <form className="login" onSubmit={handleSubmit}>
-      <img className="logo login__logo" src={lampLogo} alt="" />
-      <h1 className="login__title">Home Lamp</h1>
-
-      <label className="login__label" htmlFor="lamp-password">
-        Password
-      </label>
-      <input
-        id="lamp-password"
-        className="login__input"
-        type="password"
-        name="password"
-        value={password}
-        autoComplete="current-password"
-        enterKeyHint="go"
-        autoFocus
-        disabled={pending}
-        onChange={(event) => setPassword(event.target.value)}
-      />
-
-      {error !== null && (
-        <p className="login__error" role="alert">
-          {error === 'wrong_password'
-            ? 'That password did not work.'
-            : 'Cannot reach the lamp. Check that you are on the Home Lamp network.'}
-        </p>
-      )}
-
-      <button className="button button--primary" type="submit" disabled={pending}>
-        {pending ? 'Unlocking…' : 'Unlock'}
-      </button>
-    </form>
-  )
+    <>
+      <img className="logo logo--login" src={logo} alt="Home Lamp" />
+      <h1 className="title">Home Lamp</h1>
+      <form className="login-form" onSubmit={submit}>
+        <label className="field">
+          <span className="field__label">Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="off"
+            required
+          />
+        </label>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="button button--primary" disabled={pending}>
+          {pending ? "Unlocking…" : "Unlock"}
+        </button>
+      </form>
+    </>
+  );
 }

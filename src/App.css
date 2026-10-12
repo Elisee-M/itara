@@ -1,196 +1,131 @@
 .app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
   min-height: 100dvh;
-  padding: max(env(safe-area-inset-top), 16px) 16px
-    max(env(safe-area-inset-bottom), 16px);
-}
-
-.app__main {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: 28px;
-  max-width: 420px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.app__footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding-top: 24px;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
 }
 
-.app__credit {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
   text-align: center;
 }
 
-/* Small, quiet link out to the portfolio. 44px tall so it stays easy to
-   tap, but it reads as a link and never competes with the lamp controls. */
-.app__portfolio {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 13px;
-  text-decoration: none;
+.logo {
+  object-fit: contain;
+}
+.logo--login { width: 120px; height: 120px; }
+.logo--dashboard,
+.logo--connection { width: 96px; height: 96px; }
+[data-theme="lagoon"] .logo {
+  filter: drop-shadow(0 0 8px rgba(95, 184, 168, 0.25));
 }
 
-.app__portfolio:active {
-  opacity: 0.7;
+.title {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
-/* Buttons: full-width, large tap targets, no hover-only affordances. */
+/* Status is plain text on purpose: no background, border or button styling. */
+.status {
+  margin: 0;
+  font-size: 1.15rem;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.hint,
+.notice {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-danger);
+}
+
 .button {
   width: 100%;
   min-height: var(--tap);
-  padding: 14px 20px;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--radius);
-  font-size: 17px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--button-fg);
+  cursor: pointer;
+  transition: opacity 0.15s, background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.button:disabled { opacity: 0.55; cursor: default; }
+.button--on { background: var(--color-accent); }
+.button--off { background: var(--color-danger); }
+.button--primary { background: var(--color-primary); }
+.button--ghost {
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  min-height: 44px;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
-.button--primary {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.button--secondary {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--text);
-  font-weight: 500;
-}
-
-.button:active:not(:disabled) {
-  opacity: 0.85;
-}
-
-/* Logo */
-.logo {
-  display: block;
-  height: auto;
-  margin: 0 auto;
-  object-fit: contain;
-}
-
-.login__logo {
-  width: 88px;
-}
-
-/* Login */
-.login {
+.login-form {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  text-align: left;
 }
 
-.login__title {
-  margin: 0 0 8px;
-  font-size: 26px;
-  font-weight: 650;
-  text-align: center;
-}
-
-.login__label {
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.login__input {
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 0.85rem; color: var(--color-muted); }
+.field input {
   width: 100%;
   min-height: var(--tap);
-  padding: 12px 14px;
-  border: 1px solid var(--border);
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  /* 17px keeps iOS/WebView from zooming in when the field is focused. */
-  font-size: 17px;
-  background: var(--surface);
+  background: var(--color-elevated);
+  color: var(--color-text);
+}
+.field input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.7;
 }
 
-.login__error {
-  margin: 0;
-  font-size: 14px;
-  color: var(--danger);
-}
+.secondary { width: 100%; margin-top: 8px; }
+.confirm { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.confirm__row { display: flex; gap: 10px; width: 100%; }
 
-.login .button {
-  margin-top: 8px;
-}
-
-/* Dashboard */
-.dashboard {
+.footer {
+  margin-top: 24px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  text-align: center;
-}
-
-.dashboard__logo {
-  width: 64px;
-  margin-bottom: 4px;
-}
-
-/* Plain text status: no background, no border, no button-like styling. */
-.dashboard__status {
-  margin: 0;
-  font-size: 21px;
-  font-weight: 500;
-}
-
-.dashboard__notice {
-  margin: 0;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.dashboard__toggle {
-  min-height: 60px;
-  font-size: 18px;
-}
-
-/* Quiet secondary action, narrower than the toggle so it reads as a fallback
-   and never competes with the lamp control. */
-.dashboard__logout {
-  max-width: 200px;
-  font-size: 15px;
-}
-
-/* Connection problems */
-.connection {
-  display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
-  text-align: center;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--color-muted);
 }
-
-.connection__text {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 500;
-}
-
-.connection__logo {
-  width: 72px;
-  margin-bottom: 4px;
-}
-
-.connection__hint {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: var(--muted);
+.pill {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-surface);
 }

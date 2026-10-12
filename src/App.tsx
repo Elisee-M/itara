@@ -1,204 +1,134 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from "react";
+import logo from "./assets/home-lamp-logo.png";
 import {
-  LampUnreachableError,
-  NotAuthenticatedError,
   getStatus,
   login,
   logout,
+  rebootDevice,
   toggleLamp,
-} from './api/lamp.ts'
-import lampLogo from './assets/home-lamp-logo.png'
-import type { LampStatus } from './api/lamp.ts'
-import DashboardView from './components/DashboardView.tsx'
-import Footer from './components/Footer.tsx'
-import LoginView from './components/LoginView.tsx'
-import type { UnlockResult } from './components/LoginView.tsx'
-import './App.css'
+  NotAuthenticatedError,
+} from "./api/lamp.ts";
+import type { LampStatus } from "./api/lamp.ts";
+import ConnectionView from "./components/ConnectionView.tsx";
+import DashboardView from "./components/DashboardView.tsx";
+import Footer from "./components/Footer.tsx";
+import LoginView from "./components/LoginView.tsx";
+import type { UnlockResult } from "./components/LoginView.tsx";
+import ThemeToggle from "./components/ThemeToggle.tsx";
+import { useThemeWithTransition } from "./theme/useThemeTransition.ts";
+import "./App.css";
 
-const POLL_INTERVAL_MS = 4000
-const IDLE_POLL_INTERVAL_MS = 15000
+const POLL_MS = 4000;
 
 export default function App() {
-  const [status, setStatus] = useState<LampStatus | null>(null)
-  const [unreachable, setUnreachable] = useState(false)
-  const [checked, setChecked] = useState(false)
-  const inFlight = useRef(false)
-  const mutationInFlight = useRef(false)
-  const revision = useRef(0)
-  const timer = useRef<number | null>(null)
-
-  const authenticated = status?.authenticated === true
+  const [status, setStatus] = useState<LampStatus | null>(null);
+  const [unreachable, setUnreachable] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const inFlight = useRef(false);
+  const { toggleWithTransition } = useThemeWithTransition();
 
   const checkStatus = useCallback(async () => {
-    if (inFlight.current) return
-    inFlight.current = true
-    const startedAt = revision.current
-
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
-      const next = await getStatus()
-      // A toggle or a login landed while this request was in the air: that
-      // answer is newer than ours, so drop it instead of clobbering it.
-      if (revision.current !== startedAt) return
-      setStatus(next)
-      setUnreachable(false)
+      const next = await getStatus();
+      setStatus(next);
+      setUnreachable(false);
     } catch {
-      if (revision.current !== startedAt) return
-      setUnreachable(true)
+      setUnreachable(true);
     } finally {
-      inFlight.current = false
-      setChecked(true)
+      inFlight.current = false;
+      setChecked(true);
     }
-  }, [])
-
-  const handleUnlock = useCallback(
-    async (password: string): Promise<UnlockResult> => {
-      try {
-        const success = await login(password)
-        if (!success) return 'wrong_password'
-
-        revision.current += 1
-        setStatus((previous) => ({
-          authenticated: true,
-          lampOn: previous?.lampOn ?? false,
-        }))
-        setUnreachable(false)
-        void checkStatus()
-        return 'ok'
-      } catch {
-        setUnreachable(true)
-        return 'unreachable'
-      }
-    },
-    [checkStatus],
-  )
-
-  const handleToggle = useCallback(async () => {
-    if (mutationInFlight.current) return
-    mutationInFlight.current = true
-
-    try {
-      const lampOn = await toggleLamp()
-      revision.current += 1
-      setStatus((previous) => ({
-        authenticated: previous?.authenticated ?? true,
-        lampOn,
-      }))
-      setUnreachable(false)
-    } catch (error) {
-      if (error instanceof NotAuthenticatedError) {
-        // The device dropped the session: fall back to the login screen.
-        revision.current += 1
-        setStatus({ authenticated: false, lampOn: false })
-        return
-      }
-
-      setUnreachable(true)
-      if (error instanceof LampUnreachableError) void checkStatus()
-    } finally {
-      mutationInFlight.current = false
-    }
-  }, [checkStatus])
-
-  const handleLogout = useCallback(async () => {
-    if (mutationInFlight.current) return
-    mutationInFlight.current = true
-
-    try {
-      await logout()
-      // A refused logout still means the device holds no usable session for us,
-      // and the next poll re-syncs whatever the device really thinks.
-      revision.current += 1
-      setStatus({ authenticated: false, lampOn: false })
-      setUnreachable(false)
-    } catch (error) {
-      if (error instanceof NotAuthenticatedError) {
-        revision.current += 1
-        setStatus({ authenticated: false, lampOn: false })
-        return
-      }
-
-      setUnreachable(true)
-    } finally {
-      mutationInFlight.current = false
-    }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    // On the login screen there is nothing to keep in sync but reachability, so
-    // poll slowly there and keep the 4s cadence only while a session is open.
-    const interval = authenticated ? POLL_INTERVAL_MS : IDLE_POLL_INTERVAL_MS
-    let cancelled = false
-
-    const schedule = () => {
-      if (cancelled) return
-      if (timer.current !== null) window.clearTimeout(timer.current)
-      timer.current = window.setTimeout(run, interval)
-    }
-
-    // Self-scheduling: the next request only goes out once the previous one has
-    // settled, so a slow device can never stack requests on top of each other.
-    const run = async () => {
-      if (cancelled) return
-      if (document.visibilityState === 'visible') await checkStatus()
-      schedule()
-    }
-
-    const refreshWhenVisible = () => {
-      if (document.visibilityState !== 'visible') return
-      void checkStatus()
-      schedule()
-    }
-
-    void run()
-
-    document.addEventListener('visibilitychange', refreshWhenVisible)
-    window.addEventListener('focus', refreshWhenVisible)
-
+    void checkStatus();
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void checkStatus();
+    };
+    const timer = window.setInterval(refreshIfVisible, POLL_MS);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("focus", refreshIfVisible);
     return () => {
-      cancelled = true
-      if (timer.current !== null) window.clearTimeout(timer.current)
-      timer.current = null
-      document.removeEventListener('visibilitychange', refreshWhenVisible)
-      window.removeEventListener('focus', refreshWhenVisible)
-    }
-  }, [authenticated, checkStatus])
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("focus", refreshIfVisible);
+    };
+  }, [checkStatus]);
 
-  const showConnectionScreen = !checked || (unreachable && status === null)
+  const handleUnlock = async (password: string): Promise<UnlockResult> => {
+    try {
+      const ok = await login(password);
+      if (!ok) return "wrong";
+      setStatus((prev) => ({ lampOn: prev?.lampOn ?? false, authenticated: true }));
+      setUnreachable(false);
+      void checkStatus();
+      return "ok";
+    } catch {
+      return "unreachable";
+    }
+  };
+
+  const handleToggle = async (): Promise<void> => {
+    try {
+      const lampOn = await toggleLamp();
+      setStatus({ authenticated: true, lampOn });
+      setUnreachable(false);
+    } catch (error) {
+      if (error instanceof NotAuthenticatedError) {
+        setStatus((prev) => (prev ? { ...prev, authenticated: false } : prev));
+      } else {
+        setUnreachable(true);
+      }
+    }
+  };
+
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await logout();
+    } catch {
+      // Even if the request fails, leave the dashboard locally.
+    }
+    setStatus((prev) => (prev ? { ...prev, authenticated: false } : prev));
+  };
+
+  const handleReboot = async (): Promise<void> => {
+    try {
+      await rebootDevice();
+    } catch {
+      // The device may drop before it replies. That is expected.
+    }
+    setStatus((prev) => (prev ? { ...prev, authenticated: false } : prev));
+  };
+
+  const showConnectionScreen = !checked || (unreachable && status === null);
+
+  let view;
+  if (showConnectionScreen) {
+    view = <ConnectionView logo={logo} checking={!checked} onRetry={() => void checkStatus()} />;
+  } else if (status?.authenticated) {
+    view = (
+      <DashboardView
+        logo={logo}
+        lampOn={status.lampOn}
+        unreachable={unreachable}
+        onToggle={handleToggle}
+        onLogout={handleLogout}
+        onReboot={handleReboot}
+      />
+    );
+  } else {
+    view = <LoginView logo={logo} onUnlock={handleUnlock} />;
+  }
 
   return (
     <div className="app">
-      <main className="app__main">
-        {showConnectionScreen ? (
-          <section className="connection">
-            <img className="logo connection__logo" src={lampLogo} alt="" />
-            <p className="connection__text">
-              {checked ? 'Cannot reach the lamp.' : 'Connecting to the lamp…'}
-            </p>
-            <p className="connection__hint">
-              Make sure this phone is joined to the Home Lamp WiFi network.
-            </p>
-            {checked && (
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={() => void checkStatus()}
-              >
-                Try again
-              </button>
-            )}
-          </section>
-        ) : status?.authenticated ? (
-          <DashboardView
-            lampOn={status.lampOn}
-            unreachable={unreachable}
-            onToggle={handleToggle}
-            onLogout={handleLogout}
-          />
-        ) : (
-          <LoginView onUnlock={handleUnlock} />
-        )}
-      </main>
+      <header className="app__header">
+        <ThemeToggle onToggle={toggleWithTransition} />
+      </header>
+      <main className="content">{view}</main>
       <Footer />
     </div>
-  )
+  );
 }

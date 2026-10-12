@@ -1,126 +1,16 @@
-# Home Lamp
+## Theming (Deep Lagoon)
 
-Mobile-first web app for the ESP32 "Home Lamp" controller. The app is **not**
-hosted on the device: it runs as a standalone web app (later wrapped into an
-Android APK with Capacitor) and talks to the ESP32 over the local network once
-the phone joins the "Home Lamp" WiFi AP.
+The app supports two themes: `light` (default) and `lagoon` (dark). A no-flash theme script runs in `<head>` to set the initial theme from localStorage or `prefers-color-scheme`. The choice is persisted in `localStorage` under `home-lamp-theme`. The `ThemeToggle` in the header lets you switch instantly; if the View Transitions API is available, the switch uses a circular reveal expanding from the toggle center, with fallback and `prefers-reduced-motion` respected.
 
-## Requirements
+### Usage
 
-- Phone joined to the `Home Lamp` WiFi AP (isolated network, no internet).
-- Device reachable at `http://192.168.4.1` (plain HTTP, no HTTPS).
-
-## Scripts
-
-```sh
-npm install
-npm run dev      # local dev server (use a proxy or your LAN IP to test on a phone)
-npm run build    # type-check + production build into dist/
-npm run preview  # serve the production build
-npm run lint     # oxlint (ignores android/ and dist/)
+```ts
+import { useTheme } from './theme/useTheme'
+const { theme, toggle } = useTheme()
 ```
 
-## Configuration
+### Customization
 
-The device host is read at build time and defaults to `http://192.168.4.1`:
+Colors live as CSS variables in `src/index.css` (`:root` and `[data-theme="lagoon"]`). Semantic aliases (`--color-bg`, `--color-surface`, `--color-text`, `--color-muted`, `--color-border`, `--color-primary`, `--color-accent`, `--color-danger`, `--color-elevated`, `--button-fg`) are exposed so future changes affect the whole UI.
 
-```sh
-# .env.local
-VITE_LAMP_HOST=http://192.168.4.1
-```
-
-## API contract
-
-Base URL `http://192.168.4.1`, CORS already enabled, no token or cookie.
-
-| Endpoint  | Method | Body                          | Response                        |
-| --------- | ------ | ----------------------------- | ------------------------------- |
-| `/api/status` | GET  | –                            | `{ authenticated, lampOn }`     |
-| `/api/login`  | POST | `pwd=<string>` (urlencoded) | `{ success }`                   |
-| `/api/toggle` | POST | –                            | `{ lampOn }` (401 if not logged in) |
-| `/api/logout` | POST | –                            | `{ success }`                   |
-
-`authenticated` is treated as a live flag: the app polls `/api/status` every 4
-seconds while a session is open and every 15 seconds on the login screen, where
-the only useful signal is reachability. Polling pauses while the app is hidden
-and refreshes on resume. The next request is only scheduled once the previous one
-has settled, so a slow device can never stack requests. The app returns to the
-login screen as soon as the device reports `false` — including on a 401 from
-`/api/toggle`.
-
-## Race safety
-
-A status poll can take up to 6 seconds to time out, so a response issued before a
-toggle can land after it. Every mutation (login, toggle, logout) bumps a
-revision counter in `src/App.tsx`, and a poll that resolves under an older
-revision is discarded instead of overwriting newer state. Mutations additionally
-share a single in-flight guard.
-
-Firmware that answers `401` instead of `200` with a body is handled too: on
-`/api/status` and `/api/login` a 401 is read as a session state, not an outage,
-so a wrong password never shows the "cannot reach the lamp" message.
-
-## Offline by design
-
-No external fonts, CDNs, analytics or any request outside `192.168.4.1`; system
-font stack only. Every network failure (wrong network, device off, malformed
-response, 6 s timeout) surfaces as a calm message — never a raw error.
-
-## Project layout
-
-```
-src/
-  api/lamp.ts              API client for the four endpoints
-  assets/home-lamp-logo.png  App logo (transparent background)
-  components/Footer.tsx    "Made by Elisee" credit + portfolio link (every screen)
-  components/LoginView.tsx Logo, password field + Unlock button
-  components/DashboardView.tsx  Logo, status text, toggle + Log out buttons
-  App.tsx                  Root: status polling, mutations and view switching
-  index.css / App.css      Mobile-first styles
-public/
-  favicon.png, icon-192.png, icon-512.png   Icons generated from the logo
-home_lamp_logo.png         Full-size original artwork, source for the launcher icon
-```
-
-> The `Made by Elisee` footer in `src/components/Footer.tsx` is a permanent
-> requirement — do not remove or hide it.
-
-The footer also links to `https://elisee.vercel.app/`. It is a plain anchor
-with `target="_blank"`, so it adds no request of its own (the app still only
-ever talks to the device) and a packaged WebView hands it to the system
-browser. On the isolated AP it simply will not load, which is expected.
-
-## Logo
-
-`src/assets/home-lamp-logo.png` is the transparent-background artwork, shown on
-the login and dashboard screens. `public/favicon.png` and the `icon-*.png` files
-are downscaled copies of it, used by the browser/WebView chrome.
-
-## Wrapping as an Android APK (later)
-
-```sh
-npm run build
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init "Home Lamp" com.elisee.homelamp --web-dir=dist
-npx cap add android && npx cap sync
-npx cap open android
-```
-
-`android/` is **not** tracked in git: it is generated by `npx cap add android`
-and refreshed by `npx cap sync`, and committing it only ever produced a stale
-copy of the built web bundle. A complete project from an earlier attempt is
-preserved on the `tmp-rebuild` branch if you want to diff against it.
-
-Launcher icon: Capacitor generates the Android mipmaps from a single square
-source. Put a **1024×1024** opaque PNG at `assets/icon.png` before
-`npx cap add android` — export it from the full-size original artwork
-(`home_lamp_logo.png`, 1254×1254) rather than upscaling the 500×500
-transparent version used in the UI.
-
-Note: Android blocks cleartext HTTP by default. The generated
-`android/app/src/main/res/xml/network_security_config.xml` only allows
-localhost, so add the device before building the APK:
-
-```xml
-<domain includeSubdomains="false">192.168.4.1</domain>
-```
+All styles reference these variables. No external fonts, no Tailwind, no network dependencies beyond the device.
