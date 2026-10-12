@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { FormEvent } from "react";
+
 export type UnlockResult = "ok" | "wrong" | "unreachable";
 
 type Props = {
